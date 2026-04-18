@@ -2,42 +2,69 @@ import { useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
+const BASE_URL = "https://expense-tracker-backend.onrender.com";
+
 export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [text, setText] = useState("");
   const [amount, setAmount] = useState("");
 
+  // 🔹 Fetch transactions
   const fetchTransactions = async () => {
-    const res = await fetch("http://127.0.0.1:5000/transactions");
-    const data = await res.json();
-    setTransactions(data);
+    try {
+      const res = await fetch(`${BASE_URL}/transactions`);
+      const data = await res.json();
+      setTransactions(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
   };
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
+  // 🔹 Add transaction
   const addTransaction = async () => {
     if (!text || !amount) return;
 
-    await fetch("http://127.0.0.1:5000/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, amount: Number(amount) }),
-    });
+    try {
+      const res = await fetch(`${BASE_URL}/transactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          amount: Number(amount),
+        }),
+      });
 
-    setText("");
-    setAmount("");
-    fetchTransactions();
+      const data = await res.json();
+      console.log("Added:", data);
+
+      setText("");
+      setAmount("");
+      fetchTransactions();
+    } catch (err) {
+      console.error("POST error:", err);
+    }
   };
 
+  // 🔹 Delete transaction
   const deleteTransaction = async (index) => {
-    await fetch(`http://127.0.0.1:5000/transactions/${index}`, {
-      method: "DELETE",
-    });
-    fetchTransactions();
+    try {
+      await fetch(`${BASE_URL}/transactions/${index}`, {
+        method: "DELETE",
+      });
+
+      fetchTransactions();
+    } catch (err) {
+      console.error("DELETE error:", err);
+    }
   };
 
+  // 🔹 Calculations
   const income = transactions
     .filter((t) => t.amount > 0)
     .reduce((acc, t) => acc + t.amount, 0);
@@ -48,6 +75,7 @@ export default function App() {
 
   const balance = income + expense;
 
+  // 🔹 Chart
   const chartData = {
     labels: ["Income", "Expense"],
     datasets: [
@@ -67,7 +95,6 @@ export default function App() {
         position: "top",
         labels: {
           color: "#cbd5f5",
-          padding: 20,
         },
       },
     },
@@ -82,7 +109,7 @@ export default function App() {
           <h1 style={styles.title}>💎 Expense Tracker</h1>
 
           <div style={styles.balanceCard}>
-            <p style={{ opacity: 0.8 }}>Total Balance</p>
+            <p>Total Balance</p>
             <h1>₹{balance}</h1>
           </div>
 
@@ -175,6 +202,7 @@ export default function App() {
   );
 }
 
+// 🎨 Styles
 const styles = {
   container: {
     background: "#0f172a",
@@ -182,13 +210,10 @@ const styles = {
     padding: "20px",
     fontFamily: "sans-serif",
   },
-
   dashboard: {
     display: "flex",
     gap: "20px",
-    alignItems: "flex-start",
   },
-
   left: {
     flex: 1,
     background: "#1e293b",
@@ -196,31 +221,20 @@ const styles = {
     borderRadius: "15px",
     color: "#fff",
   },
-
   right: {
     flex: 2,
     display: "flex",
     flexDirection: "column",
     gap: "20px",
   },
-
-  title: {
-    marginBottom: "15px",
-  },
-
+  title: { marginBottom: "15px" },
   balanceCard: {
     background: "linear-gradient(135deg, #38bdf8, #6366f1)",
     padding: "20px",
     borderRadius: "12px",
     textAlign: "center",
-    marginBottom: "15px",
   },
-
-  row: {
-    display: "flex",
-    gap: "10px",
-  },
-
+  row: { display: "flex", gap: "10px", marginTop: "10px" },
   incomeCard: {
     flex: 1,
     background: "#22c55e",
@@ -228,7 +242,6 @@ const styles = {
     borderRadius: "10px",
     textAlign: "center",
   },
-
   expenseCard: {
     flex: 1,
     background: "#ef4444",
@@ -236,14 +249,12 @@ const styles = {
     borderRadius: "10px",
     textAlign: "center",
   },
-
   form: {
     marginTop: "20px",
     display: "flex",
     flexDirection: "column",
     gap: "10px",
   },
-
   input: {
     padding: "10px",
     borderRadius: "8px",
@@ -251,7 +262,6 @@ const styles = {
     background: "#334155",
     color: "#fff",
   },
-
   button: {
     padding: "10px",
     borderRadius: "10px",
@@ -260,32 +270,24 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
   },
-
   chartCard: {
     background: "#1e293b",
     padding: "15px",
     borderRadius: "15px",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
   },
-
   chartWrapper: {
     width: "260px",
     height: "260px",
   },
-
   list: {
     background: "#1e293b",
     padding: "15px",
     borderRadius: "15px",
     maxHeight: "260px",
     overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
   },
-
   item: {
     background: "#334155",
     padding: "12px",
@@ -293,19 +295,10 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: "10px",
   },
-
-  text: {
-    margin: 0,
-    fontWeight: "500",
-    color: "#e2e8f0",
-  },
-
-  amount: {
-    fontSize: "14px",
-    fontWeight: "600",
-  },
-
+  text: { margin: 0, color: "#e2e8f0" },
+  amount: { fontSize: "14px", fontWeight: "600" },
   delete: {
     background: "#ef4444",
     border: "none",
@@ -314,7 +307,6 @@ const styles = {
     borderRadius: "6px",
     cursor: "pointer",
   },
-
   empty: {
     textAlign: "center",
     opacity: 0.6,
