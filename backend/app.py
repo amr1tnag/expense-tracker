@@ -4,35 +4,43 @@ import os
 
 app = Flask(__name__)
 
-# ✅ Proper CORS (handles preflight automatically)
-CORS(app)
+# 🔥 Allow your GitHub Pages origin (and handle preflight)
+CORS(
+    app,
+    resources={r"/*": {"origins": "https://amr1tnag.github.io"}},
+    methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
 
-# In-memory storage
 transactions = []
 
-# Home route (for testing)
-@app.route('/')
+@app.route("/")
 def home():
     return "Backend is running 🚀"
 
-# GET + POST
-@app.route('/transactions', methods=['GET', 'POST'])
-def handle_transactions():
-    if request.method == 'GET':
+# Combine GET + POST in one route
+@app.route("/transactions", methods=["GET", "POST", "OPTIONS"])
+def transactions_route():
+    if request.method == "OPTIONS":
+        return ("", 204)  # preflight OK
+
+    if request.method == "GET":
         return jsonify(transactions)
 
-    if request.method == 'POST':
-        data = request.get_json()
+    if request.method == "POST":
+        data = request.get_json(force=True)
         transactions.append(data)
         return jsonify({"message": "Added"})
 
-# DELETE
-@app.route('/transactions/<int:index>', methods=['DELETE'])
+# DELETE (also allow OPTIONS)
+@app.route("/transactions/<int:index>", methods=["DELETE", "OPTIONS"])
 def delete_transaction(index):
-    if index < len(transactions):
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    if 0 <= index < len(transactions):
         transactions.pop(index)
     return jsonify({"message": "Deleted"})
 
-# Run app (Render compatible)
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
